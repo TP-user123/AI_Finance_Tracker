@@ -1,5 +1,6 @@
-import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import Sidebar from "./Components/Sidebar";
 import MobileMenu from "./Components/MobileMenu";
 import Dashboard from "./Pages/Dashboard";
@@ -26,6 +27,9 @@ function App() {
           </main>
         </div>
       </div>
+
+      {/* ✅ Toasts work globally across the app */}
+      <ToastContainer position="top-right" autoClose={2000} />
     </Router>
   );
 }

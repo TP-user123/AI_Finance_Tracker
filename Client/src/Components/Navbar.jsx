@@ -1,12 +1,19 @@
 const Navbar = () => {
   return (
-    <header className="flex justify-between items-center p-4 bg-white shadow sticky top-0 z-10">
-      <input
-        type="text"
-        placeholder="Search transactions..."
-        className="border px-4 py-2 rounded-md w-full max-w-sm"
-      />
-      <div className="ml-4 text-2xl">👤</div>
+    <header className="bg-white shadow-md sticky top-0 z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          {/* Logo or App Title */}
+          <div className="text-xl font-semibold text-gray-800">
+            💰 MyFinance
+          </div>
+
+          {/* User Icon */}
+          <div className="text-2xl text-gray-600 cursor-pointer hover:text-gray-800 transition">
+            👤
+          </div>
+        </div>
+      </div>
     </header>
   );
 };
