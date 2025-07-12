@@ -4,6 +4,9 @@ const ConnectionDB = require('./Config/ConnectionDB');
 const transactionRoutes = require('./Router/transactionRoutes');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const insightsRoutes = require('./Router/insights');
+
+
 
 
 //Database connection
@@ -13,7 +16,11 @@ ConnectionDB;
 //Router Middleware
 app.use(cors());
 app.use(express.json());
+
+
+//Creating API
 app.use('/api/transactions', transactionRoutes);
+app.use('/api/insights', insightsRoutes);
 
 
 

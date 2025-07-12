@@ -5,6 +5,7 @@ import Sidebar from "./Components/Sidebar";
 import MobileMenu from "./Components/MobileMenu";
 import Dashboard from "./Pages/Dashboard";
 import Transactions from "./Pages/Transactions";
+import Insights from "./Pages/Insights";
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
             <Routes>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/transactions" element={<Transactions />} />
+              <Route path="/insights" element={<Insights />} />
               <Route path="*" element={<Dashboard />} /> {/* Fallback route */}
             </Routes>
           </main>
