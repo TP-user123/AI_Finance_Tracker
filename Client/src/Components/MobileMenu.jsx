@@ -3,7 +3,7 @@ import { NavLink } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 
 const navLinks = [
-  { to: "/dashboard", label: "Dashboard" },
+  { to: "/", label: "Dashboard" },
   { to: "/transactions", label: "Transactions" },
   { to: "/insights", label: "Insights" },
   { to: "/settings", label: "Settings" },

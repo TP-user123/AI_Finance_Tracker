@@ -20,35 +20,44 @@ const CategorySummary = () => {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [categoryTxns, setCategoryTxns] = useState([]);
 
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const res = await axios.get("http://localhost:5000/api/transactions");
-        const transactions = res.data;
-        setAllTxns(transactions);
 
-        const expenseTxns = transactions.filter(txn => txn.type === "debit");
 
-        const categoryTotals = {};
-        expenseTxns.forEach(txn => {
-          const cat = txn.category || "Other";
-          categoryTotals[cat] = (categoryTotals[cat] || 0) + txn.amount;
-        });
+useEffect(() => {
+  const fetchCategories = async () => {
+    try {
+      const token = localStorage.getItem("token"); // ✅ Get JWT from localStorage
 
-        const formatted = Object.entries(categoryTotals).map(([name, amount]) => ({
-          name,
-          amount,
-          color: categoryColors[name] || "#9ca3af",
-        }));
+      const res = await axios.get("http://localhost:5000/api/transactions", {
+        headers: {
+          Authorization: `Bearer ${token}`, // 🔐 Attach token in header
+        },
+      });
 
-        setCategories(formatted);
-      } catch (err) {
-        console.error("Failed to load category summary:", err);
-      }
-    };
+      const transactions = res.data;
+      setAllTxns(transactions);
 
-    fetchCategories();
-  }, []);
+      const expenseTxns = transactions.filter(txn => txn.type === "debit");
+
+      const categoryTotals = {};
+      expenseTxns.forEach(txn => {
+        const cat = txn.category || "Other";
+        categoryTotals[cat] = (categoryTotals[cat] || 0) + txn.amount;
+      });
+
+      const formatted = Object.entries(categoryTotals).map(([name, amount]) => ({
+        name,
+        amount,
+        color: categoryColors[name] || "#9ca3af",
+      }));
+
+      setCategories(formatted);
+    } catch (err) {
+      console.error("Failed to load category summary:", err);
+    }
+  };
+
+  fetchCategories();
+}, []);
 
   const handleCategoryClick = (categoryName) => {
     const filtered = allTxns.filter(

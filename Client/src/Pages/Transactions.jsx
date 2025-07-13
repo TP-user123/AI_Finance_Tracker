@@ -26,28 +26,35 @@ const Transactions = () => {
   });
 
   // 🟢 Fetch all transactions
-  const fetchTransactions = async () => {
-    try {
-      const res = await axios.get("http://localhost:5000/api/transactions");
-      setTransactions(res.data);
-    } catch (err) {
-      console.error("Failed to load transactions:", err);
-    }
-  };
-
-  useEffect(() => {
-    fetchTransactions();
-  }, []);
+ const fetchTransactions = async () => {
+  try {
+    const token = localStorage.getItem("token");
+    const res = await axios.get("http://localhost:5000/api/transactions", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    setTransactions(res.data);
+  } catch (err) {
+    console.error("Failed to load transactions:", err);
+  }
+};
 
   // 🟢 Delete
-  const handleDelete = async (id) => {
-    try {
-      await axios.delete(`http://localhost:5000/api/transactions/${id}`);
-      fetchTransactions(); // refresh
-    } catch (err) {
-      console.error("Delete failed:", err);
-    }
-  };
+ const handleDelete = async (id) => {
+  try {
+    const token = localStorage.getItem("token");
+    await axios.delete(`http://localhost:5000/api/transactions/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    fetchTransactions();
+  } catch (err) {
+    console.error("Delete failed:", err);
+  }
+};
+
 
   // 🟢 Edit
   const handleEdit = (txn) => {
@@ -71,44 +78,56 @@ const Transactions = () => {
   // 🟢 Submit (Add or Update)
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
+  e.preventDefault();
+  setIsSubmitting(true);
 
-    const newTxn = {
-      ...formData,
-      amount: parseFloat(formData.amount),
-      description: formData.description || "",
-    };
+  const token = localStorage.getItem("token");
 
-    try {
-      if (formData._id) {
-        await axios.put(
-          `http://localhost:5000/api/transactions/${formData._id}`,
-          newTxn
-        );
-        toast.success("Transaction updated!");
-      } else {
-        await axios.post("http://localhost:5000/api/transactions", newTxn);
-        toast.success("Transaction added!");
-      }
-
-      setFormData({
-        date: "",
-        type: "",
-        category: "",
-        amount: "",
-        description: "",
-      });
-
-      fetchTransactions();
-      setShowForm(false); // ✅ Auto-close modal after save
-    } catch (err) {
-      toast.error("Failed to save transaction");
-      console.error("Save failed:", err);
-    } finally {
-      setIsSubmitting(false);
-    }
+  const newTxn = {
+    ...formData,
+    amount: parseFloat(formData.amount),
+    description: formData.description || "",
   };
+
+  try {
+    if (formData._id) {
+      await axios.put(
+        `http://localhost:5000/api/transactions/${formData._id}`,
+        newTxn,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      toast.success("Transaction updated!");
+    } else {
+      await axios.post("http://localhost:5000/api/transactions", newTxn, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      toast.success("Transaction added!");
+    }
+
+    setFormData({
+      date: "",
+      type: "",
+      category: "",
+      amount: "",
+      description: "",
+    });
+
+    fetchTransactions();
+    setShowForm(false);
+  } catch (err) {
+    toast.error("Failed to save transaction");
+    console.error("Save failed:", err);
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
 
   // 🧠 Filter
   let filtered = [...transactions];

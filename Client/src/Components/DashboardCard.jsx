@@ -9,45 +9,53 @@ const DashboardCard = () => {
     savingsRate: 0,
   });
 
-  useEffect(() => {
-    const fetchTransactions = async () => {
-      try {
-        const res = await axios.get("http://localhost:5000/api/transactions"); // Replace with your actual backend URL
-        const transactions = res.data;
+  // Fetch financial data from API
+useEffect(() => {
+  const fetchTransactions = async () => {
+    try {
+      const token = localStorage.getItem("token"); // ✅ Get JWT token
 
-        let totalBalance = 0;
-        let monthlySpend = 0;
-        let monthlyIncome = 0;
+      const res = await axios.get("http://localhost:5000/api/transactions", {
+        headers: {
+          Authorization: `Bearer ${token}`, // 🔐 Attach token
+        },
+      });
 
-        const currentMonth = new Date().getMonth();
-        const currentYear = new Date().getFullYear();
+      const transactions = res.data;
 
-        transactions.forEach(txn => {
-          const txnDate = new Date(txn.date);
-          const isThisMonth = txnDate.getMonth() === currentMonth && txnDate.getFullYear() === currentYear;
+      let totalBalance = 0;
+      let monthlySpend = 0;
+      let monthlyIncome = 0;
 
-          // Update balance
-          totalBalance += txn.type === "credit" ? txn.amount : -txn.amount;
+      const currentMonth = new Date().getMonth();
+      const currentYear = new Date().getFullYear();
 
-          // Monthly stats
-          if (isThisMonth) {
-            if (txn.type === "credit") monthlyIncome += txn.amount;
-            else if (txn.type === "debit") monthlySpend += txn.amount;
-          }
-        });
+      transactions.forEach(txn => {
+        const txnDate = new Date(txn.date);
+        const isThisMonth = txnDate.getMonth() === currentMonth && txnDate.getFullYear() === currentYear;
 
-        const savingsRate = monthlyIncome
-          ? Math.max(0, (((monthlyIncome - monthlySpend) / monthlyIncome) * 100).toFixed(2))
-          : 0;
+        // Calculate total balance
+        totalBalance += txn.type === "credit" ? txn.amount : -txn.amount;
 
-        setStats({ totalBalance, monthlySpend, monthlyIncome, savingsRate });
-      } catch (err) {
-        console.error("Failed to fetch transactions:", err);
-      }
-    };
+        // Calculate current month's income and spending
+        if (isThisMonth) {
+          if (txn.type === "credit") monthlyIncome += txn.amount;
+          else if (txn.type === "debit") monthlySpend += txn.amount;
+        }
+      });
 
-    fetchTransactions();
-  }, []);
+      const savingsRate = monthlyIncome
+        ? Math.max(0, (((monthlyIncome - monthlySpend) / monthlyIncome) * 100).toFixed(2))
+        : 0;
+
+      setStats({ totalBalance, monthlySpend, monthlyIncome, savingsRate });
+    } catch (err) {
+      console.error("Failed to fetch transactions:", err);
+    }
+  };
+
+  fetchTransactions();
+}, []);
 
   const financeCards = [
     {

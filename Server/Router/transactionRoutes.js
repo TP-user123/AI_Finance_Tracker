@@ -7,7 +7,11 @@ const {
   updateTransaction
 } = require('../Controller/transactionController');
 
-// GET all transactions
+const authMiddleware = require('../Middleware/authMiddleware'); // 🔐 Add this
+
+router.use(authMiddleware); // 🔒 Protect all routes below
+
+// GET all transactions (for current user only)
 router.get('/', getAllTransactions);
 
 // POST a new transaction
@@ -20,4 +24,3 @@ router.delete('/:id', deleteTransaction);
 router.put('/:id', updateTransaction);
 
 module.exports = router;
-

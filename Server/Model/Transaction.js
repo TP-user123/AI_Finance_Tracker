@@ -2,11 +2,11 @@
 const mongoose = require('mongoose');
 
 const transactionSchema = new mongoose.Schema({
- /* userId: {
+  userId: {
     type: mongoose.Schema.Types.ObjectId, // link to User if needed
     ref: 'User',
-    required: false, // set true if using auth
-  },*/
+    required: true, // set true if using auth
+  },
   date: {
     type: Date,
     required: true,

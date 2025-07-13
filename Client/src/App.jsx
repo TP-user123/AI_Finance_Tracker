@@ -8,6 +8,7 @@ import Transactions from "./Pages/Transactions";
 import Insights from "./Pages/Insights";
 import NotFoundPage from "./Pages/NotFoundPage";
 import Login from "./Pages/Login";
+import Navbar from "./Components/Navbar";
 
 function AppLayout() {
   const location = useLocation();
@@ -21,7 +22,7 @@ function AppLayout() {
       <div className={`flex-1 ${!isLoginPage ? "md:ml-64" : ""}`}>
         {/* Mobile navbar only if not on login page */}
         {!isLoginPage && <MobileMenu />}
-
+<Navbar />
         <main className="p-4 sm:p-6">
           <Routes>
             <Route path="/" element={<Dashboard />} />
