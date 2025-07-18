@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import LoadingButton from "../Components/LoadingButton";
 import TransactionModal from "../Components/TransactionModal";
 import TransactionDetailModal from "../Components/TransactionDetailModal";
+import {exportToPDF} from "../Components/PdfGenerator";
 
 const Transactions = () => {
   const [transactions, setTransactions] = useState([]);
@@ -39,6 +40,11 @@ const Transactions = () => {
     console.error("Failed to load transactions:", err);
   }
 };
+
+
+useEffect(() => {
+  fetchTransactions();
+}, []);
 
   // 🟢 Delete
  const handleDelete = async (id) => {
@@ -178,6 +184,13 @@ const Transactions = () => {
         >
           + Add Transaction
         </button>
+        <button
+  onClick={() => exportToPDF(transactions)}
+  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+>
+  Export to PDF
+</button>
+
       </div>
       {/* Filters & Sorting */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">

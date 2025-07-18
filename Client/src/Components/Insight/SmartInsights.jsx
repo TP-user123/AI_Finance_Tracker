@@ -1,14 +1,22 @@
 import React from "react";
+import {
+  generateSmartInsights,
+} from "../../utils/aiSuggestions"; // make sure this file exists
 
-const SmartInsights = ({ monthlyStats }) => {
+const SmartInsights = ({ monthlyStats, transactions = [], recurringItems = [] }) => {
   const income = monthlyStats?.currentMonth?.credit || 0;
 
-  // Filter out credit and debit to analyze categorized expenses
   const entries = Object.entries(monthlyStats?.currentMonth || {}).filter(
     ([key]) => !["credit", "debit"].includes(key)
   );
 
-  // Early exit if there's no income or stats
+  const extraInsights = generateSmartInsights({
+    currentMonth: monthlyStats?.currentMonth || {},
+    previousMonth: monthlyStats?.previousMonth || {},
+    transactions,
+    recurringItems,
+  });
+
   if (!income || entries.length === 0) {
     return (
       <div className="mt-10">
@@ -18,7 +26,6 @@ const SmartInsights = ({ monthlyStats }) => {
     );
   }
 
-  // Sort categories by percentage spent, descending
   const sortedEntries = entries
     .map(([category, amount]) => ({
       category,
@@ -27,7 +34,6 @@ const SmartInsights = ({ monthlyStats }) => {
     }))
     .sort((a, b) => b.percent - a.percent);
 
-  // Generate contextual advice
   const generateAdvice = (category, percent) => {
     if (percent >= 90) {
       return `Consider revisiting your priorities—${percent}% of income on ${category} may be excessive.`;
@@ -43,13 +49,14 @@ const SmartInsights = ({ monthlyStats }) => {
 
   return (
     <div className="mt-10">
-      <h2 className="text-xl font-bold text-gray-700 mb-4">Smart Insights</h2>
+      <h2 className="text-xl font-bold text-gray-700 mb-4">💡 Smart AI Insights</h2>
+
       <ul className="space-y-3">
+        {/* Your original insights */}
         {sortedEntries.map(({ category, amount, percent }) => {
           const numeric = parseFloat(percent);
           const advice = generateAdvice(category, numeric);
 
-          // Only show insights if there's meaningful advice
           if (!advice) return null;
 
           const bgColor =
@@ -65,6 +72,14 @@ const SmartInsights = ({ monthlyStats }) => {
             </li>
           );
         })}
+
+        {/* AI-based extra insights */}
+        {extraInsights.length > 0 &&
+          extraInsights.map((msg, idx) => (
+            <li key={"ai-" + idx} className="bg-blue-100 text-blue-800 p-4 rounded-md">
+              🧠 {msg}
+            </li>
+          ))}
       </ul>
     </div>
   );

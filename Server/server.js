@@ -6,6 +6,11 @@ const insightsRoutes = require('./Router/insights');
 const authRoutes = require('./Router/authRoutes');  // 👈 Add this
 const cors = require('cors');
 const dotenv = require('dotenv');
+const limitsRoutes = require("./Router/userRoutes"); // or limits.js
+const notificationsRoutes = require("./Router/notifications");
+
+
+
 dotenv.config();
 
 // Database connection
@@ -19,6 +24,9 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);  // 👈 Add this line
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/insights', insightsRoutes);
+app.use("/api/user", limitsRoutes);
+app.use("/api", notificationsRoutes);
+
 
 // Server
 app.listen(process.env.PORT || 5001, () => {

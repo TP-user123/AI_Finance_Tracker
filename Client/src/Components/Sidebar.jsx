@@ -5,6 +5,7 @@ const navLinks = [
   { to: "/transactions", label: "Transactions" },
   { to: "/insights", label: "Insights" },
   { to: "/settings", label: "Settings" },
+  
 ];
 
 const Sidebar = () => {

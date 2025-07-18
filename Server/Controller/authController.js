@@ -33,7 +33,7 @@ exports.loginUser = async (req, res) => {
     if (!valid) return res.status(401).json({ message: "Wrong password" });
 
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
-    res.json({ token, user: { name: user.name, email: user.email } });
+    res.json({ token, user: { name: user.name, email: user.email  , provider: "local",} });
   } catch {
     res.status(500).json({ message: "Login failed" });
   }
@@ -57,11 +57,12 @@ exports.googleLogin = async (req, res) => {
         email: payload.email,
         name: payload.name,
         picture: payload.picture,
+        
       });
     }
 
     const authToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
-    res.json({ token: authToken, user: { name: user.name, email: user.email, picture: user.picture } });
+    res.json({ token: authToken, user: { name: user.name, email: user.email, picture: user.picture, provider: "google" } });
   } catch (err) {
     res.status(401).json({ error: "Invalid Google token" });
   }
