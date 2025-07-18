@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const User = require("../Model/User");
-const authenticateUser = require("../middleware/authMiddleware");
+const authenticateUser = require("../Middleware/authMiddleware");
 
 // ✅ GET /api/user/limits
 router.get("/limits", authenticateUser, async (req, res) => {
