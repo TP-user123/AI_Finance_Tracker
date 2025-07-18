@@ -17,7 +17,7 @@ dotenv.config();
 ConnectionDB;
 
 // Middleware
-app.use(cors());
+app.use(cors({ origin : 'https://finance-tracker-ai.netlify.app/'}));
 app.use(express.json());
 
 // Routers
