@@ -6,6 +6,7 @@ import SmartInsights from "../Components/Insight/SmartInsights";
 import PieChartStats from "../Components/Insight/PieChartStats";
 import BarChartStats from "../Components/Insight/BarChartStats";
 import CategoryInsights from "../Components/Insight/CategoryInsights";
+const apiUrl = import.meta.env.VITE_API_URL;
 
 const Insights = () => {
   const [transactions, setTransactions] = useState([]);
@@ -59,7 +60,7 @@ useEffect(() => {
     try {
       const token = localStorage.getItem("token"); // 🔐 Get the JWT token
 
-      const res = await axios.get("http://localhost:5000/api/transactions", {
+      const res = await axios.get(`${apiUrl}/api/transactions`, {
         headers: {
           Authorization: `Bearer ${token}`, // ✅ Attach token here
         },

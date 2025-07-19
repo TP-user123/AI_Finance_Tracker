@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+const apiUrl = import.meta.env.VITE_API_URL;
 
 const DashboardCard = () => {
   const [stats, setStats] = useState({
@@ -15,7 +16,7 @@ useEffect(() => {
     try {
       const token = localStorage.getItem("token"); // ✅ Get JWT token
 
-      const res = await axios.get("http://localhost:5000/api/transactions", {
+      const res = await axios.get(`${apiUrl}/api/transactions`, {
         headers: {
           Authorization: `Bearer ${token}`, // 🔐 Attach token
         },

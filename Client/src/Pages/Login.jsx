@@ -3,10 +3,14 @@ import { GoogleLogin } from "@react-oauth/google";
 import { jwtDecode } from "jwt-decode";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import { Loader2 } from "lucide-react";
+
+const apiUrl = import.meta.env.VITE_API_URL;
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -18,52 +22,69 @@ const Login = () => {
     setForm({ name: "", email: "", password: "" });
   };
 
- const handleSubmit = async (e) => {
-  e.preventDefault();
-  const url = isLogin ? "/api/auth/login" : "/api/auth/register";
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    const url = isLogin ? "/api/auth/login" : "/api/auth/register";
 
-  const res = await fetch(`http://localhost:5000${url}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(form),
-  });
+    try {
+      const res = await fetch(`${apiUrl}${url}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
 
-  const data = await res.json();
-  if (res.ok) {
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("user", JSON.stringify(data.user)); // ✅ Add this
-    toast.success(`${isLogin ? "Logged in" : "Registered"} successfully!`);
-    window.location.href = "/"; // redirect
-  } else {
-    toast.error(data.message || "Something went wrong");
-  }
-};
+      const data = await res.json();
 
+      if (res.ok) {
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+        toast.success(`${isLogin ? "Logged in" : "Registered"} successfully!`);
+        navigate("/");
+      } else {
+        toast.error(data.message || "Invalid credentials or user not found.");
+      }
+    } catch (error) {
+      toast.error("Something went wrong. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
- const handleGoogleLogin = async (cred) => {
-  const decoded = jwtDecode(cred.credential);
+  const handleGoogleLogin = async (cred) => {
+    setLoading(true);
+    try {
+      const decoded = jwtDecode(cred.credential);
+      const res = await fetch(`${apiUrl}/api/auth/google`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: cred.credential }),
+      });
 
-  const res = await fetch("http://localhost:5000/api/auth/google", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ token: cred.credential }),
-  });
-
-  const data = await res.json();
-  if (res.ok) {
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("user", JSON.stringify(data.user)); // ✅ Add this
-    toast.success("Logged in with Google!");
-    window.location.href = "/";
-  } else {
-    toast.error("Google login failed");
-  }
-};
-
+      const data = await res.json();
+      if (res.ok) {
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+        toast.success("Logged in with Google!");
+        navigate("/");
+      } else {
+        toast.error("Google login failed.");
+      }
+    } catch (err) {
+      toast.error("Google Sign-in Failed");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-tr from-blue-100 via-white to-pink-100 px-4">
-      <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-2xl border border-gray-200">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-tr from-blue-200 via-white to-pink-200 px-4">
+      <div className="w-full max-w-md bg-white/80 backdrop-blur-md p-8 rounded-2xl shadow-2xl border border-gray-200 animate-fadeIn">
+        <img
+          src="https://cdn-icons-png.flaticon.com/256/4593/4593628.png"
+          alt="Logo"
+          className="w-24 h-24 mx-auto mb-4"
+        />
         <h2 className="text-3xl font-bold text-center mb-6 text-blue-700">
           {isLogin ? "Welcome Back!" : "Create an Account"}
         </h2>
@@ -103,9 +124,12 @@ const Login = () => {
 
           <button
             type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg transition"
+            disabled={loading}
+            className={`w-full flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg transition ${
+              loading ? "opacity-70 cursor-not-allowed" : ""
+            }`}
           >
-            {isLogin ? "Login" : "Register"}
+            {loading ? <Loader2 className="animate-spin w-5 h-5" /> : isLogin ? "Login" : "Register"}
           </button>
         </form>
 

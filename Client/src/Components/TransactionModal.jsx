@@ -12,9 +12,9 @@ const TransactionModal = ({
   if (!showForm) return null;
 
   return (
-    <div className="fixed inset-0 bg-white/30 backdrop-blur-sm flex justify-center items-center z-50">
-      <div className="bg-white p-6 rounded-xl shadow-xl w-full max-w-md animate-fade-in">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">
+    <div className="fixed inset-0 bg-white/30 backdrop-blur-sm flex justify-center items-center z-50 px-4">
+      <div className="bg-white p-4 sm:p-6 rounded-xl shadow-xl w-full max-w-md animate-fade-in overflow-hidden">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6 border-b pb-2">
           {formData._id ? "Edit Transaction" : "Add New Transaction"}
         </h2>
 
@@ -24,7 +24,7 @@ const TransactionModal = ({
             <p className="text-sm text-gray-500">Saving...</p>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
             {/* Date */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -32,6 +32,7 @@ const TransactionModal = ({
               </label>
               <input
                 type="date"
+                className="w-full max-w-full min-w-0 border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
                 value={
                   formData.date
                     ? new Date(formData.date).toISOString().split("T")[0]
@@ -50,7 +51,7 @@ const TransactionModal = ({
                 Type
               </label>
               <select
-                className="w-full border border-gray-300 px-4 py-2 rounded-md focus:ring-2 focus:ring-blue-500"
+                className="w-full max-w-full min-w-0 border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
                 value={formData.type}
                 onChange={(e) =>
                   setFormData({ ...formData, type: e.target.value })
@@ -69,7 +70,7 @@ const TransactionModal = ({
                 Category
               </label>
               <select
-                className="w-full border border-gray-300 px-4 py-2 rounded-md focus:ring-2 focus:ring-blue-500"
+                className="w-full max-w-full min-w-0 border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
                 value={formData.category}
                 onChange={(e) =>
                   setFormData({ ...formData, category: e.target.value })
@@ -101,7 +102,7 @@ const TransactionModal = ({
               <input
                 type="text"
                 placeholder="e.g. Uber ride, Salary, Grocery"
-                className="w-full border border-gray-300 px-4 py-2 rounded-md focus:ring-2 focus:ring-blue-500"
+                className="w-full max-w-full min-w-0 border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
                 value={formData.description || ""}
                 onChange={(e) =>
                   setFormData({ ...formData, description: e.target.value })
@@ -117,7 +118,7 @@ const TransactionModal = ({
               <input
                 type="number"
                 placeholder="Enter amount"
-                className="w-full border border-gray-300 px-4 py-2 rounded-md focus:ring-2 focus:ring-blue-500"
+                className="w-full max-w-full min-w-0 border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
                 value={formData.amount}
                 onChange={(e) =>
                   setFormData({ ...formData, amount: e.target.value })
@@ -127,10 +128,10 @@ const TransactionModal = ({
             </div>
 
             {/* Buttons */}
-            <div className="flex justify-end gap-3 pt-2">
+            <div className="flex justify-end gap-3 pt-3">
               <button
                 type="button"
-                className="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400 transition"
+                className="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400 transition text-sm"
                 onClick={() => setShowForm(false)}
               >
                 Cancel

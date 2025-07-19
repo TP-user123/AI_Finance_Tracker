@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
+const apiUrl = import.meta.env.VITE_API_URL;
 
 const RecurringForm = ({ onUpdate }) => {
   const [recurringItems, setRecurringItems] = useState([]);
@@ -17,7 +18,7 @@ const RecurringForm = ({ onUpdate }) => {
     const fetchRecurringList = async () => {
       const token = localStorage.getItem("token");
       try {
-        const res = await axios.get("http://localhost:5000/api/user/limits", {
+        const res = await axios.get(`${apiUrl}/api/user/limits`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const list = res.data?.expectedRecurringList || [];
@@ -58,7 +59,7 @@ const RecurringForm = ({ onUpdate }) => {
     const token = localStorage.getItem("token");
     try {
       await axios.put(
-        "http://localhost:5000/api/user/limits",
+        `${apiUrl}/api/user/limits`,
         { expectedRecurringList: updatedList },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -77,7 +78,7 @@ const RecurringForm = ({ onUpdate }) => {
     const token = localStorage.getItem("token");
     try {
       await axios.put(
-        "http://localhost:5000/api/user/limits",
+        `${apiUrl}/api/user/limits`,
         { expectedRecurringList: updated },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -107,7 +108,7 @@ const RecurringForm = ({ onUpdate }) => {
     const token = localStorage.getItem("token");
     try {
       await axios.put(
-        "http://localhost:5000/api/user/limits",
+       `${apiUrl}/api/user/limits`,
         { expectedRecurringList: updatedList },
         { headers: { Authorization: `Bearer ${token}` } }
       );

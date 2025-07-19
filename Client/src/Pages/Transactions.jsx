@@ -5,6 +5,7 @@ import LoadingButton from "../Components/LoadingButton";
 import TransactionModal from "../Components/TransactionModal";
 import TransactionDetailModal from "../Components/TransactionDetailModal";
 import {exportToPDF} from "../Components/PdfGenerator";
+const apiUrl = import.meta.env.VITE_API_URL;
 
 const Transactions = () => {
   const [transactions, setTransactions] = useState([]);
@@ -30,7 +31,7 @@ const Transactions = () => {
  const fetchTransactions = async () => {
   try {
     const token = localStorage.getItem("token");
-    const res = await axios.get("http://localhost:5000/api/transactions", {
+    const res = await axios.get(`${apiUrl}/api/transactions`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -50,7 +51,7 @@ useEffect(() => {
  const handleDelete = async (id) => {
   try {
     const token = localStorage.getItem("token");
-    await axios.delete(`http://localhost:5000/api/transactions/${id}`, {
+    await axios.delete(`${apiUrl}/api/transactions/${id}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -98,7 +99,7 @@ useEffect(() => {
   try {
     if (formData._id) {
       await axios.put(
-        `http://localhost:5000/api/transactions/${formData._id}`,
+        `${apiUrl}/api/transactions/${formData._id}`,
         newTxn,
         {
           headers: {
@@ -108,7 +109,7 @@ useEffect(() => {
       );
       toast.success("Transaction updated!");
     } else {
-      await axios.post("http://localhost:5000/api/transactions", newTxn, {
+      await axios.post(`${apiUrl}/api/transactions`, newTxn, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -170,7 +171,8 @@ useEffect(() => {
     <div className="flex-1 p-6">
       <h1 className="text-3xl font-bold text-gray-800 mb-6">Transactions</h1>
       {/* Search & Add */}
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
+     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 w-full">
+
         <input
           type="text"
           placeholder="Search by date, type or category..."
@@ -178,22 +180,26 @@ useEffect(() => {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <button
-          onClick={handleAdd}
-          className="bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 transition"
-        >
-          + Add Transaction
-        </button>
-        <button
-  onClick={() => exportToPDF(transactions)}
-  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
->
-  Export to PDF
-</button>
+       <div className="flex flex-wrap gap-3">
+  <button
+    onClick={handleAdd}
+    className="bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 transition"
+  >
+    + Add Transaction
+  </button>
+  <button
+    onClick={() => exportToPDF(transactions)}
+    className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
+  >
+    Export to PDF
+  </button>
+</div>
+
 
       </div>
       {/* Filters & Sorting */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+
         <div className="flex gap-3">
           <select
             className="border px-3 py-1 rounded-md"
@@ -230,7 +236,8 @@ useEffect(() => {
         </div>
       </div>
       {/* Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      "<div className="grid gap-5 grid-cols-[repeat(auto-fit,minmax(280px,1fr))]">
+
         {filtered.map((t) => (
           <div
             key={t._id}

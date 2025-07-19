@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 
+const apiUrl = import.meta.env.VITE_API_URL;
+
 const SpendingLimitCard = () => {
   const [monthlyLimit, setMonthlyLimit] = useState(0);
   const [monthlySpent, setMonthlySpent] = useState(0);
@@ -13,10 +15,10 @@ const SpendingLimitCard = () => {
         const token = localStorage.getItem("token");
 
         const [limitRes, expenseRes] = await Promise.all([
-          axios.get("http://localhost:5000/api/user/limits", {
+          axios.get(`${apiUrl}/api/user/limits`, {
             headers: { Authorization: `Bearer ${token}` },
           }),
-          axios.get("http://localhost:5000/api/transactions/monthly-total", {
+          axios.get(`${apiUrl}/api/transactions/monthly-total`, {
             headers: { Authorization: `Bearer ${token}` },
           }),
         ]);
@@ -28,8 +30,6 @@ const SpendingLimitCard = () => {
         setMonthlySpent(spent);
 
         const percentage = limit > 0 ? Math.min((spent / limit) * 100, 100) : 0;
-
-        // Trigger smooth animation after short delay
         setTimeout(() => {
           setAnimatedWidth(percentage);
         }, 100);
@@ -43,7 +43,7 @@ const SpendingLimitCard = () => {
     fetchData();
   }, []);
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <div className="text-center py-6 text-gray-500">Loading...</div>;
 
   const percentageUsed =
     monthlyLimit > 0 ? Math.min((monthlySpent / monthlyLimit) * 100, 100) : 0;
@@ -74,9 +74,10 @@ const SpendingLimitCard = () => {
       : "bg-red-500";
 
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-xl w-full space-y-4 transition-all duration-300">
+    <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-xl w-full max-w-full space-y-4 transition-all duration-300">
+
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
         <div>
           <h2 className="text-lg sm:text-xl font-bold text-gray-800 flex items-center gap-2">
             💸 Monthly Spending
@@ -84,7 +85,7 @@ const SpendingLimitCard = () => {
           <p className="text-gray-500 text-sm">Track your monthly expense limit</p>
         </div>
         <span
-          className={`px-3 py-1 text-xs sm:text-sm rounded-full font-semibold shadow-sm ${statusColor} bg-opacity-10 border ${statusColor.replace("text", "border")}`}
+          className={`px-3 py-1 text-xs sm:text-sm rounded-full font-semibold shadow-sm whitespace-nowrap ${statusColor} bg-opacity-10 border ${statusColor.replace("text", "border")}`}
         >
           {status}
         </span>
@@ -92,12 +93,15 @@ const SpendingLimitCard = () => {
 
       {/* Summary */}
       <div className="text-gray-700 text-base sm:text-lg font-medium">
-        Spent: <span className="text-blue-600 font-semibold">₹{monthlySpent}</span>{" "}
-        / <span className="text-gray-600">₹{monthlyLimit || "—"}</span>
+        Spent:{" "}
+        <span className="text-blue-600 font-semibold">
+          ₹{monthlySpent.toLocaleString()}
+        </span>{" "}
+        / <span className="text-gray-600">₹{monthlyLimit?.toLocaleString() || "—"}</span>
       </div>
 
       {/* Animated Progress Bar */}
-      <div className="w-full h-4 bg-gray-200 rounded-full overflow-hidden">
+      <div className="w-full h-3 sm:h-4 bg-gray-200 rounded-full overflow-hidden">
         <div
           className={`${progressColor} h-full transition-all duration-700`}
           style={{ width: `${animatedWidth}%` }}
@@ -106,7 +110,7 @@ const SpendingLimitCard = () => {
 
       {/* Optional Message */}
       {percentageUsed >= 100 && (
-        <div className="text-sm text-red-500 mt-1 font-semibold">
+        <div className="text-sm text-red-500 font-semibold">
           You’ve exceeded your monthly limit!
         </div>
       )}

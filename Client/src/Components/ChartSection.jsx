@@ -5,6 +5,7 @@ import {
   PointElement,
   LineElement,
   ArcElement,
+  BarElement,
   Title,
   Tooltip,
   Legend,
@@ -20,94 +21,117 @@ ChartJS.register(
   PointElement,
   LineElement,
   ArcElement,
+  BarElement,
   Title,
   Tooltip,
   Legend
 );
 
+import { Bar } from "react-chartjs-2";
+
+const apiUrl = import.meta.env.VITE_API_URL;
 const ChartSection = () => {
+  const currentYear = new Date().getFullYear();
+  const [selectedYear, setSelectedYear] = useState(currentYear);
   const [lineData, setLineData] = useState(null);
   const [pieData, setPieData] = useState(null);
-  // Fetch data from API
-useEffect(() => {
-  const fetchData = async () => {
-    try {
-      const token = localStorage.getItem("token"); // 🔐 Get token from localStorage
+  const [years, setYears] = useState([currentYear]);
 
-      const res = await axios.get("http://localhost:5000/api/transactions", {
-        headers: {
-          Authorization: `Bearer ${token}`, // 🔒 Send token
-        },
-      });
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem("token");
 
-      const transactions = res.data;
-      const currentYear = new Date().getFullYear();
+        const res = await axios.get(`${apiUrl}/api/transactions`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
-      // ---------- Line Chart (Monthly Spend) ----------
-      const monthlyTotals = Array(12).fill(0);
-      transactions.forEach(txn => {
-        const date = new Date(txn.date);
-        if (txn.type === "debit" && date.getFullYear() === currentYear) {
+        const transactions = res.data;
+
+        // Collect unique years from transactions for the dropdown
+        const uniqueYears = Array.from(
+          new Set(transactions.map(txn => new Date(txn.date).getFullYear()))
+        ).sort((a, b) => b - a);
+        setYears(uniqueYears);
+
+        // Filter transactions based on selected year
+        const filtered = transactions.filter(
+          txn => new Date(txn.date).getFullYear() === selectedYear
+        );
+
+        // ----- Line Chart Data (debit & credit both) -----
+        const monthlyDebit = Array(12).fill(0);
+        const monthlyCredit = Array(12).fill(0);
+        filtered.forEach(txn => {
+          const date = new Date(txn.date);
           const month = date.getMonth();
-          monthlyTotals[month] += txn.amount;
-        }
-      });
+          if (txn.type === "debit") {
+            monthlyDebit[month] += txn.amount;
+          } else if (txn.type === "credit") {
+            monthlyCredit[month] += txn.amount;
+          }
+        });
 
-      const lineChartData = {
-        labels: [
-          "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-          "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-        ],
-        datasets: [
-          {
-            label: "Monthly Spending (₹)",
-            data: monthlyTotals,
-            borderColor: "#2563eb",
-            backgroundColor: "rgba(59, 130, 246, 0.2)",
-            tension: 0.4,
-            fill: true,
-            pointRadius: 4,
-            pointHoverRadius: 6,
-          },
-        ],
-      };
+        setLineData({
+          labels: [
+            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+          ],
+          datasets: [
+            {
+              label: "Spending (₹)",
+              data: monthlyDebit,
+              borderColor: "#ef4444",
+              backgroundColor: "rgba(239, 68, 68, 0.2)",
+              tension: 0.4,
+              fill: true,
+              pointRadius: 4,
+              pointHoverRadius: 6,
+            },
+            {
+              label: "Income (₹)",
+              data: monthlyCredit,
+              borderColor: "#10b981",
+              backgroundColor: "rgba(16, 185, 129, 0.2)",
+              tension: 0.4,
+              fill: true,
+              pointRadius: 4,
+              pointHoverRadius: 6,
+            },
+          ],
+        });
 
-      setLineData(lineChartData);
+        // ----- Pie Chart (Category Breakdown) -----
+        const categoryTotals = {};
+        filtered.forEach(txn => {
+          if (txn.type === "debit") {
+            const cat = txn.category || "Other";
+            categoryTotals[cat] = (categoryTotals[cat] || 0) + txn.amount;
+          }
+        });
 
-      // ---------- Pie Chart (Category Breakdown) ----------
-      const categoryTotals = {};
-      transactions.forEach(txn => {
-        if (txn.type === "debit") {
-          const cat = txn.category || "Other";
-          categoryTotals[cat] = (categoryTotals[cat] || 0) + txn.amount;
-        }
-      });
+        setPieData({
+          labels: Object.keys(categoryTotals),
+          datasets: [
+            {
+              label: "Spending Breakdown",
+              data: Object.values(categoryTotals),
+              backgroundColor: [
+                "#ef4444", "#3b82f6", "#facc15", "#10b981",
+                "#6366f1", "#f97316", "#e11d48", "#22d3ee"
+              ],
+              borderColor: "#fff",
+              borderWidth: 2,
+            },
+          ],
+        });
+      } catch (err) {
+        console.error("Error fetching chart data:", err);
+      }
+    };
 
-      const pieChartData = {
-        labels: Object.keys(categoryTotals),
-        datasets: [
-          {
-            label: "Spending Breakdown",
-            data: Object.values(categoryTotals),
-            backgroundColor: [
-              "#ef4444", "#3b82f6", "#facc15", "#10b981",
-              "#6366f1", "#f97316", "#e11d48", "#22d3ee"
-            ],
-            borderColor: "#ffffff",
-            borderWidth: 2,
-          },
-        ],
-      };
-
-      setPieData(pieChartData);
-    } catch (err) {
-      console.error("Error fetching chart data:", err);
-    }
-  };
-
-  fetchData();
-}, []);
-
+    fetchData();
+  }, [selectedYear]);
 
   const lineOptions = {
     responsive: true,
@@ -122,13 +146,9 @@ useEffect(() => {
       },
       title: {
         display: true,
-        text: "Monthly Spending Trend",
+        text: `Monthly Spending & Income in ${selectedYear}`,
         color: "#111827",
         font: { size: 16, weight: "bold" },
-      },
-      tooltip: {
-        mode: "index",
-        intersect: false,
       },
     },
     scales: {
@@ -164,23 +184,50 @@ useEffect(() => {
   };
 
   return (
-    <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-10">
-      {/* Line Chart */}
-      <div className="bg-white p-6 rounded-2xl shadow-md h-[320px]">
-        {lineData ? (
-          <Line options={lineOptions} data={lineData} />
-        ) : (
-          <p className="text-gray-500 text-sm">Loading line chart...</p>
-        )}
-      </div>
+    <section className="mt-6">
+      {/* Year Dropdown */}
+      {/* Enhanced Year Selector */}
+<div className="mb-6 flex flex-wrap items-center gap-3">
+  <label
+    htmlFor="year"
+    className="text-gray-700 text-sm font-medium"
+  >
+    Select Year:
+  </label>
+  <select
+    id="year"
+    value={selectedYear}
+    onChange={(e) => setSelectedYear(Number(e.target.value))}
+    className="px-4 py-2 text-sm rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all"
+  >
+    {years.map((y) => (
+      <option key={y} value={y}>
+        {y}
+      </option>
+    ))}
+  </select>
+</div>
 
-      {/* Pie Chart */}
-      <div className="bg-white p-6 rounded-2xl shadow-md h-[320px]">
-        {pieData ? (
-          <Pie data={pieData} options={pieOptions} />
-        ) : (
-          <p className="text-gray-500 text-sm">Loading pie chart...</p>
-        )}
+
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Line Chart */}
+        <div className="bg-white p-6 rounded-2xl shadow-md h-[320px]">
+          {lineData ? (
+            <Line options={lineOptions} data={lineData} />
+          ) : (
+            <p className="text-gray-500 text-sm">Loading line chart...</p>
+          )}
+        </div>
+
+        {/* Pie Chart */}
+        <div className="bg-white p-6 rounded-2xl shadow-md h-[320px]">
+          {pieData ? (
+            <Pie data={pieData} options={pieOptions} />
+          ) : (
+            <p className="text-gray-500 text-sm">Loading pie chart...</p>
+          )}
+        </div>
       </div>
     </section>
   );

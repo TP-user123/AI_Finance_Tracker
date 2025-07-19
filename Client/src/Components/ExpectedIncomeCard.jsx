@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+const apiUrl = import.meta.env.VITE_API_URL;
 
 const ExpectedIncomeCard = () => {
   const [recurringList, setRecurringList] = useState([]);
@@ -7,7 +8,7 @@ const ExpectedIncomeCard = () => {
   useEffect(() => {
     const token = localStorage.getItem("token");
     axios
-      .get("http://localhost:5000/api/user/limits", {
+      .get(`${apiUrl}/api/user/limits`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {

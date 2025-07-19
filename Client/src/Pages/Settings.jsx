@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import axios from "axios";
 import RecurringForm from "../Components/RecurringForm";
+const apiUrl = import.meta.env.VITE_API_URL;
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -28,7 +29,7 @@ const Settings = () => {
 
   const fetchSpendingLimit = async (token) => {
     try {
-      const res = await axios.get("http://localhost:5000/api/user/limits", {
+      const res = await axios.get(`${apiUrl}/api/user/limits`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setMonthlyLimit(res.data?.monthly || 0);
@@ -42,7 +43,7 @@ const Settings = () => {
       setIsSaving(true);
       const token = localStorage.getItem("token");
       await axios.put(
-        "http://localhost:5000/api/user/limits",
+        `${apiUrl}/api/user/limits`,
         { monthly: Number(monthlyLimit) },
         { headers: { Authorization: `Bearer ${token}` } }
       );
