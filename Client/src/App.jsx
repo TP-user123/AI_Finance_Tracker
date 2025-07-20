@@ -31,7 +31,7 @@ function AppLayout() {
         {/* Mobile navbar only if not on login page */}
         {!isLoginPage && <MobileMenu />}
         {!isLoginPage && <Navbar />}
-        <main className="p-4 sm:p-6">
+        <main className={`p-4 sm:p-6  ${!isLoginPage ? "pb-20" : ""}`}>
           <Routes>
             {/* Protected Routes */}
             <Route
