@@ -1,90 +1,49 @@
-import { useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { Menu, X, LogOut } from "lucide-react";
+import { LogOut, Home, List, BarChart, Settings } from "lucide-react";
 
 const navLinks = [
-  { to: "/", label: "Dashboard" },
-  { to: "/transactions", label: "Transactions" },
-  { to: "/insights", label: "Insights" },
-  { to: "/settings", label: "Settings" },
+  { to: "/", label: "Dashboard", icon: <Home size={20} /> },
+  { to: "/transactions", label: "Transactions", icon: <List size={20} /> },
+  { to: "/insights", label: "Insights", icon: <BarChart size={20} /> },
+  { to: "/settings", label: "Settings", icon: <Settings size={20} /> },
 ];
 
 const MobileMenu = () => {
-  const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    document.body.style.overflow = isOpen ? "hidden" : "auto";
-  }, [isOpen]);
-
-   const handleLogout = () => {
-    localStorage.clear(); // Clear session/token if any
+  const handleLogout = () => {
+    localStorage.clear();
     navigate("/login");
   };
 
   return (
-    <>
-      {/* Top Navbar (Mobile Only) */}
-      <div className="bg-gray-900 text-white p-4 flex justify-between items-center md:hidden">
-        <h1 className="text-xl font-bold">AI Finance</h1>
-        <button onClick={() => setIsOpen(true)} aria-label="Open menu">
-          <Menu size={28} />
-        </button>
-      </div>
-
-      {/* Sidebar Drawer */}
-      <div
-        className={`fixed inset-0 z-50 transform transition-transform duration-300 ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        } md:hidden flex`}
-      >
-        {/* Backdrop */}
-        <div
-          className="absolute inset-0 bg-opacity-50"
-          onClick={() => setIsOpen(false)}
-        ></div>
-
-        {/* Drawer Panel */}
-        <div className="relative w-64 h-full p-6 z-50 backdrop-blur-md bg-white/10 border-r border-white/20 text-black flex flex-col justify-between">
-          <div>
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold">AI Finance</h2>
-              <button onClick={() => setIsOpen(false)} aria-label="Close menu">
-                <X size={24} />
-              </button>
-            </div>
-
-            <nav className="space-y-4">
-              {navLinks.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  onClick={() => setIsOpen(false)}
-                  className={({ isActive }) =>
-                    `block px-2 py-2 rounded-md transition ${
-                      isActive
-                        ? "bg-blue-600 text-white font-semibold"
-                        : "hover:bg-white/20"
-                    }`
-                  }
-                >
-                  {item.label}
-                </NavLink>
-              ))}
-            </nav>
-          </div>
-
-          {/* Logout Button */}
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-2 px-4 py-2 mt-6 text-red-600 hover:bg-red-100 rounded-md transition"
+    <div className="fixed bottom-0 inset-x-0 bg-white border-t border-gray-200 shadow md:hidden z-50">
+      <nav className="flex justify-around items-center h-16">
+        {navLinks.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            className={({ isActive }) =>
+              `flex flex-col items-center justify-center text-xs ${
+                isActive ? "text-blue-600 font-semibold" : "text-gray-500"
+              }`
+            }
           >
-            <LogOut size={18} />
-            Logout
-          </button>
-        </div>
-      </div>
-    </>
+            {item.icon}
+            <span>{item.label}</span>
+          </NavLink>
+        ))}
+
+        {/* Logout Icon */}
+        <button
+          onClick={handleLogout}
+          className="flex flex-col items-center justify-center text-xs text-red-500"
+        >
+          <LogOut size={20} />
+          <span>Logout</span>
+        </button>
+      </nav>
+    </div>
   );
 };
 
