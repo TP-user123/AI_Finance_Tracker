@@ -201,16 +201,7 @@ useEffect(() => {
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
 
         <div className="flex gap-3">
-          <select
-            className="border px-3 py-1 rounded-md"
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-          >
-            <option value="latest">Latest First</option>
-            <option value="amountDesc">Amount: High to Low</option>
-            <option value="amountAsc">Amount: Low to High</option>
-          </select>
-
+         
           <select
             className="border px-3 py-1 rounded-md"
             value={filterType}
