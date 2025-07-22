@@ -1,47 +1,73 @@
 const Transaction = require('../Model/Transaction');
 
-// GET all transactions for the logged-in user
 const getAllTransactions = async (req, res) => {
   try {
+    console.log("Fetching transactions for:", req.userId); // ✅ debug log
     const transactions = await Transaction.find({ userId: req.userId }).sort({ date: -1 });
     res.status(200).json(transactions);
   } catch (err) {
+    console.error("Error in getAllTransactions:", err); // ✅ show full error
     res.status(500).json({ error: err.message });
   }
 };
 
-// POST a new transaction for the logged-in user
+
 const addTransaction = async (req, res) => {
   try {
-    const { date, description, amount, type, category } = req.body;
+    const { date, description, amount, type, category, isCustomCategory, paymentMode } = req.body;
 
-    // Check for duplicate transaction (optional)
+    // Validate transaction type
+    if (!["credit", "debit"].includes(type)) {
+      return res.status(400).json({ error: "Invalid transaction type. Must be 'credit' or 'debit'." });
+    }
+
+    // Validate amount
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ error: "Amount must be greater than 0" });
+    }
+
+    // Validate date not in future
+    const today = new Date().toISOString().split("T")[0];
+    if (date > today) {
+      return res.status(400).json({ error: "Future dates are not allowed" });
+    }
+
+    // Optional: prevent credit via card (custom logic)
+    if (type === "credit" && paymentMode === "card") {
+      return res.status(400).json({ error: "Card cannot be used for credit transactions" });
+    }
+
+    // Check for duplicate transaction (based on date, amount, type, category, user)
     const existing = await Transaction.findOne({
       date,
-      description,
       amount,
       type,
       category,
       userId: req.userId,
+      ...(description && { description }),
     });
 
     if (existing) {
-      return res.status(409).json({ error: 'Duplicate transaction detected' });
+      return res.status(409).json({ error: "Duplicate transaction detected" });
     }
 
+    // Create new transaction
     const transaction = new Transaction({
+      userId: req.userId,
       date,
-      description,
+      description: description || "",
       amount,
       type,
       category,
-      userId: req.userId, // attach logged-in user ID
+      isCustomCategory: !!isCustomCategory,
+      paymentMode,
     });
 
     const saved = await transaction.save();
     res.status(201).json(saved);
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    console.error("Error in addTransaction:", err);
+    res.status(500).json({ error: err.message });
   }
 };
 
@@ -64,16 +90,43 @@ const deleteTransaction = async (req, res) => {
 // UPDATE a transaction (only if it belongs to the logged-in user)
 const updateTransaction = async (req, res) => {
   try {
+    const { date, amount, type, paymentMode, category } = req.body;
+
+    // Validate type
+    if (!["credit", "debit"].includes(type)) {
+      return res.status(400).json({ error: "Invalid transaction type. Must be 'credit' or 'debit'" });
+    }
+
+    // Validate payment mode
+    if (type === "credit" && paymentMode === "card") {
+      return res.status(400).json({ error: "Card cannot be used for credit transactions" });
+    }
+
+    // Validate amount
+    if (amount <= 0) {
+      return res.status(400).json({ error: "Amount must be greater than 0" });
+    }
+
+    // Validate date
+    const today = new Date().toISOString().split("T")[0];
+    if (date > today) {
+      return res.status(400).json({ error: "Future dates are not allowed" });
+    }
+
+    // Perform the update
     const updated = await Transaction.findOneAndUpdate(
       { _id: req.params.id, userId: req.userId },
       req.body,
       { new: true }
     );
 
-    if (!updated) return res.status(404).json({ error: 'Transaction not found' });
+    if (!updated) {
+      return res.status(404).json({ error: "Transaction not found" });
+    }
 
     res.status(200).json(updated);
   } catch (err) {
+    console.error("Error in updateTransaction:", err);
     res.status(500).json({ error: err.message });
   }
 };
@@ -83,4 +136,6 @@ module.exports = {
   addTransaction,
   deleteTransaction,
   updateTransaction,
+  
 };
+

@@ -1,5 +1,9 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import { toast } from "react-toastify";
 import LoadingButton from "./LoadingButton";
+
+const apiUrl = import.meta.env.VITE_API_URL;
 
 const TransactionModal = ({
   showForm,
@@ -9,6 +13,92 @@ const TransactionModal = ({
   handleSubmit,
   isSubmitting,
 }) => {
+  const [incomeCategories, setIncomeCategories] = useState([]);
+  const [expenseCategories, setExpenseCategories] = useState([]);
+  const [newCategory, setNewCategory] = useState("");
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [customCategories, setCustomCategories] = useState({ debit: [], credit: [] });
+
+  const token = localStorage.getItem("token");
+
+  const defaultCategories = [
+    "Food",
+    "Rent",
+    "Utilities",
+    "Shopping",
+    "Entertainment",
+    "Income",
+  ];
+
+  const handleDeleteCategory = async (categoryName, type) => {
+    try {
+      await axios.delete(`${apiUrl}/api/transactions/categories/custom`, {
+        headers: { Authorization: `Bearer ${token}` },
+        data: { name: categoryName, type },
+      });
+
+      toast.success("Category deleted successfully!");
+      fetchCategories();
+    } catch (error) {
+      console.error("❌ Error deleting category:", error.response?.data || error.message);
+      toast.error("Failed to delete category.");
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const res = await axios.get(`${apiUrl}/api/transactions/categories`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const { credit = [], debit = [] } = res.data;
+
+      setIncomeCategories(credit);
+      setExpenseCategories(debit);
+
+      setCustomCategories({
+        credit: credit.filter(cat => !defaultCategories.includes(cat)),
+        debit: debit.filter(cat => !defaultCategories.includes(cat)),
+      });
+    } catch (err) {
+      console.error("❌ Failed to fetch categories", err);
+      toast.error("Could not load categories");
+    }
+  };
+
+  const handleAddCategory = async () => {
+    const trimmed = newCategory.trim();
+    if (!trimmed) return;
+
+    try {
+      await axios.post(`${apiUrl}/api/transactions/categories`, {
+        name: trimmed,
+        type: formData.type,
+      }, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      await fetchCategories();
+      setFormData(prev => ({ ...prev, category: trimmed }));
+      setNewCategory("");
+      toast.success("Category added successfully!");
+    } catch (err) {
+      console.error("Error adding category:", err.response?.data || err.message);
+      toast.error(err.response?.data?.error || "Failed to add category");
+    }
+  };
+
+  useEffect(() => {
+    if (showForm) fetchCategories();
+  }, [showForm]);
+
+  const getCategoryOptions = () =>
+    formData.type === "credit" ? incomeCategories : expenseCategories;
+
+  const getDropdownColor = () =>
+    formData.type === "credit" ? "ring-green-500" :
+    formData.type === "debit" ? "ring-red-500" : "";
+
   if (!showForm) return null;
 
   return (
@@ -24,39 +114,38 @@ const TransactionModal = ({
             <p className="text-sm text-gray-500">Saving...</p>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (formData.amount <= 0) {
+                toast.error("Amount must be greater than 0.");
+                return;
+              }
+              handleSubmit(e);
+            }}
+            className="space-y-4 sm:space-y-5"
+          >
             {/* Date */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Date
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
               <input
                 type="date"
-                className="w-full max-w-full min-w-0 border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
-                value={
-                  formData.date
-                    ? new Date(formData.date).toISOString().split("T")[0]
-                    : ""
-                }
-                onChange={(e) =>
-                  setFormData({ ...formData, date: e.target.value })
-                }
+                value={formData.date}
+                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                max={new Date().toISOString().split("T")[0]}
                 required
+                className="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
               />
             </div>
 
             {/* Type */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Type
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
               <select
-                className="w-full max-w-full min-w-0 border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
                 value={formData.type}
-                onChange={(e) =>
-                  setFormData({ ...formData, type: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, type: e.target.value, category: "" })}
                 required
+                className="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
               >
                 <option value="">Select Type</option>
                 <option value="credit">Income</option>
@@ -66,73 +155,114 @@ const TransactionModal = ({
 
             {/* Category */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Category
-              </label>
+              <div className="relative">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                <button
+                  type="button"
+                  onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
+                  className={`w-full text-left border border-gray-300 px-3 py-2 rounded-md focus:ring-2 ${getDropdownColor()} text-sm`}
+                >
+                  {formData.category || "Select Category"}
+                </button>
+
+                {showCategoryDropdown && (
+                  <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-64 overflow-y-auto">
+                    {getCategoryOptions().map((cat) => (
+                      <div
+                        key={cat._id || cat}
+                        className="flex justify-between items-center px-3 py-2 hover:bg-gray-100 text-sm"
+                      >
+                        <span
+                          className="cursor-pointer flex-1"
+                          onClick={() => {
+                            setFormData({ ...formData, category: cat });
+                            setShowCategoryDropdown(false);
+                          }}
+                        >
+                          {cat}
+                        </span>
+                        {!defaultCategories.includes(cat) && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteCategory(cat, formData.type)}
+                            className="text-red-500 text-xs hover:underline ml-2"
+                          >
+                            Delete
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Add custom category */}
+              <div className="mt-2 flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Add custom category"
+                  value={newCategory}
+                  onChange={(e) => setNewCategory(e.target.value)}
+                  className="flex-1 px-2 py-1 border border-gray-300 rounded-md text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddCategory}
+                  className="bg-blue-500 text-white text-sm px-3 py-1 rounded-md hover:bg-blue-600"
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+
+            {/* Payment Method */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
               <select
-                className="w-full max-w-full min-w-0 border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
-                value={formData.category}
-                onChange={(e) =>
-                  setFormData({ ...formData, category: e.target.value })
-                }
+                value={formData.paymentMethod || ""}
+                onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
                 required
+                className="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
               >
-                <option value="">Select Category</option>
-                {[
-                  "Food",
-                  "Rent",
-                  "Transport",
-                  "Shopping",
-                  "Utilities",
-                  "Entertainment",
-                  "Other",
-                ].map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
+                <option value="">Select Method</option>
+                <option value="Cash">Cash</option>
+                <option value="Bank">Bank</option>
+                {formData.type === "debit" && <option value="Card">Card</option>}
               </select>
             </div>
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Description
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
               <input
                 type="text"
                 placeholder="e.g. Uber ride, Salary, Grocery"
-                className="w-full max-w-full min-w-0 border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
                 value={formData.description || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                className="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
               />
             </div>
 
             {/* Amount */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Amount (₹)
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Amount (₹)</label>
               <input
                 type="number"
                 placeholder="Enter amount"
-                className="w-full max-w-full min-w-0 border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
+                min={1}
                 value={formData.amount}
-                onChange={(e) =>
-                  setFormData({ ...formData, amount: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                 required
+                className="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
               />
             </div>
 
-            {/* Buttons */}
+            {/* Actions */}
             <div className="flex justify-end gap-3 pt-3">
               <button
                 type="button"
-                className="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400 transition text-sm"
                 onClick={() => setShowForm(false)}
+                className="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400 text-sm"
               >
                 Cancel
               </button>

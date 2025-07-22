@@ -293,13 +293,13 @@ useEffect(() => {
         )}
       </div>
       <TransactionModal
-        showForm={showForm}
-        setShowForm={setShowForm}
-        formData={formData}
-        setFormData={setFormData}
-        handleSubmit={handleSubmit}
-        isSubmitting={isSubmitting}
-      />
+  showForm={showForm}
+  setShowForm={setShowForm}
+  formData={formData}
+  setFormData={setFormData}
+  handleSubmit={handleSubmit}
+  isSubmitting={isSubmitting}
+/>
       <TransactionDetailModal
   transaction={selectedTransaction}
   onClose={() => setSelectedTransaction(null)}

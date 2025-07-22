@@ -1,20 +1,25 @@
-// models/Transaction.js
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const transactionSchema = new mongoose.Schema({
   userId: {
-    type: mongoose.Schema.Types.ObjectId, // link to User if needed
-    ref: 'User',
-    required: true, // set true if using auth
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
   },
   date: {
     type: Date,
     required: true,
+    validate: {
+      validator: function (value) {
+        return value <= new Date(); // Prevent future dates
+      },
+      message: "Date cannot be in the future",
+    },
   },
   description: {
     type: String,
-    required: true,
     trim: true,
+    default: "", // Optional
   },
   amount: {
     type: Number,
@@ -22,17 +27,27 @@ const transactionSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['credit', 'debit'],
+    enum: ["credit", "debit"], // Your confirmed types
     required: true,
   },
   category: {
     type: String,
-  required: true, // optional category
+    required: true, // Allow any custom or predefined value
+    trim: true,
+  },
+  isCustomCategory: {
+    type: Boolean,
+    default: false, // Will be true only if user added a custom one
+  },
+  paymentMode: {
+    type: String,
+    enum: ["cash", "bank", "upi", "wallet", "other"],
+    default: "cash",
   },
   createdAt: {
     type: Date,
     default: Date.now,
-  }
+  },
 });
 
-module.exports = mongoose.model('Transaction', transactionSchema);
+module.exports = mongoose.model("Transaction", transactionSchema);
