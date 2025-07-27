@@ -5,7 +5,7 @@ import ChartSection from '../Components/ChartSection';
 import CategorySummary from '../Components/CategorySummary';
 import SpendingLimitCard from '../Components/SpendingLimitCard';
 import ExpectedIncomeCard from '../Components/ExpectedIncomeCard';
-import ChatToggle from '../Components/Ai/chatToggle';
+import ChatToggle from '../Components/ChatToggle';
 const Dashboard = () => {
   return (
     <div className="flex-1 p-4">
