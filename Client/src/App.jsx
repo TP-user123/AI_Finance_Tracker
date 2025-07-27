@@ -16,7 +16,6 @@ import Login from "./Pages/Login";
 import Navbar from "./Components/Navbar";
 import PrivateRoute from "./Components/PrivateRoute";
 import Settings from "./Pages/Settings";
-import Notification from "./Pages/NotificationsPage";
 
 function AppLayout() {
   const location = useLocation();
@@ -60,14 +59,7 @@ function AppLayout() {
               }
             />
 
-            <Route
-  path="/notifications"
-  element={
-    <PrivateRoute>
-      <Notification />
-    </PrivateRoute>
-  }
-/>
+            
 
            
             <Route
