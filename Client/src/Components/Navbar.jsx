@@ -32,23 +32,7 @@ const Navbar = () => {
           {/* App Title */}
           <div className="text-xl font-semibold text-gray-800">💰 MyFinance</div>
 
-          {/* Right section: Notification + User Info */}
-          <div className="flex items-center gap-6">
-            {/* 🔔 Notification Bell */}
-            <button
-              onClick={() => navigate("/notifications")} // Navigate to notifications page
-              className="relative"
-              title="Upcoming Bills"
-            >
-              <Bell className="w-6 h-6 text-gray-700 hover:text-blue-600 transition" />
-              {hasUpcomingBills && (
-                <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-ping" />
-              )}
-              {hasUpcomingBills && (
-                <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />
-              )}
-            </button>
-
+       
             {/* 👤 User Info */}
             {user ? (
               <div className="flex items-center gap-3">
@@ -72,7 +56,7 @@ const Navbar = () => {
             )}
           </div>
         </div>
-      </div>
+    
     </header>
   );
 };

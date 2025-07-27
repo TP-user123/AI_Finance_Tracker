@@ -1,268 +1,232 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import RecurringItemForm from "./RecurringItemForm";
 import { toast } from "react-toastify";
-const apiUrl = import.meta.env.VITE_API_URL;
+import { Loader2 } from "lucide-react";
 
-const RecurringForm = ({ onUpdate }) => {
+const RecurringForm = () => {
   const [recurringItems, setRecurringItems] = useState([]);
   const [newItem, setNewItem] = useState({
     source: "",
     amount: "",
     type: "income",
     date: "",
+    frequency: "none",
   });
-  const [editingIndex, setEditingIndex] = useState(null);
-  const [editedItem, setEditedItem] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState(null); // id of item being updated
+
+  const apiUrl = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
-    const fetchRecurringList = async () => {
-      const token = localStorage.getItem("token");
-      try {
-        const res = await axios.get(`${apiUrl}/api/user/limits`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const list = res.data?.expectedRecurringList || [];
-        setRecurringItems(list);
-      } catch (err) {
-        toast.error("Failed to fetch recurring items");
-      }
-    };
-
-    fetchRecurringList();
+    fetchRecurringItems();
   }, []);
 
-  const today = new Date();
-  const upcomingLimit = new Date();
-  upcomingLimit.setDate(today.getDate() + 7);
-
-  const upcomingBills = recurringItems.filter((item) => {
-    const due = new Date(item.date);
-    return due >= today && due <= upcomingLimit;
-  });
-
-  useEffect(() => {
-    if (upcomingBills.length > 0) {
-      toast.warn(`📢 You have ${upcomingBills.length} upcoming bill(s) due soon!`);
+  const fetchRecurringItems = async () => {
+    const token = localStorage.getItem("token");
+    setLoading(true);
+    try {
+      const res = await axios.get(`${apiUrl}/api/user/limits`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const list = res.data?.expectedRecurringList || [];
+      setRecurringItems(list);
+    } catch (err) {
+      toast.error("Failed to fetch recurring items");
+    } finally {
+      setLoading(false);
     }
-  }, [recurringItems]);
+  };
+
+  const handleInputChange = (e) => {
+    setNewItem({ ...newItem, [e.target.name]: e.target.value });
+  };
 
   const handleAddAndSave = async () => {
+    const token = localStorage.getItem("token");
+
     if (!newItem.source || !newItem.amount || !newItem.date) {
-      toast.error("Please fill in all fields");
+      toast.error("Please fill in all required fields.");
       return;
     }
 
-    const updatedList = [...recurringItems, newItem];
-    setRecurringItems(updatedList);
-    setNewItem({ source: "", amount: "", type: "income", date: "" });
-
-    const token = localStorage.getItem("token");
     try {
       await axios.put(
         `${apiUrl}/api/user/limits`,
-        { expectedRecurringList: updatedList },
-        { headers: { Authorization: `Bearer ${token}` } }
+        {
+          expectedRecurringList: [newItem],
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
-      toast.success("✅ Recurring item added & saved");
-      if (onUpdate) onUpdate(updatedList);
+
+      toast.success("Item added successfully!");
+      setNewItem({
+        source: "",
+        amount: "",
+        type: "income",
+        date: "",
+        frequency: "none",
+      });
+      fetchRecurringItems();
     } catch (err) {
-      toast.error("Failed to save recurring list");
+      console.error(err);
+      toast.error("Error saving item");
     }
   };
 
-  const handleDelete = async (index) => {
-    const updated = [...recurringItems];
-    updated.splice(index, 1);
-    setRecurringItems(updated);
-
+  const handleMarkDone = async (itemId) => {
     const token = localStorage.getItem("token");
+    setActionLoading(itemId);
     try {
-      await axios.put(
-        `${apiUrl}/api/user/limits`,
-        { expectedRecurringList: updated },
-        { headers: { Authorization: `Bearer ${token}` } }
+      await axios.post(
+        `${apiUrl}/api/recurring/markdone`,
+        { itemId },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
-      toast.success("Recurring item deleted");
-      if (onUpdate) onUpdate(updated);
+      toast.success("Item marked as done");
+      fetchRecurringItems();
     } catch (err) {
-      toast.error("Failed to update recurring list");
+      console.error(err);
+      toast.error("Failed to mark item as done");
+    } finally {
+      setActionLoading(null);
     }
   };
 
-  const handleEdit = (index) => {
-    setEditingIndex(index);
-    setEditedItem({ ...recurringItems[index] });
-  };
+  const handleUndoDone = async (itemId) => {
+  const token = localStorage.getItem("token");
+  try {
+    await axios.put(
+      `${apiUrl}/api/user/recurring/undodone`,
+      { id: itemId }, // ✅ send `id`, not `itemId`
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    toast.success("Marked as pending again");
+    fetchRecurringItems();
+  } catch (err) {
+    console.error(err);
+    toast.error("Failed to undo item");
+  }
+};
 
-  const handleEditChange = (e) => {
-    setEditedItem({ ...editedItem, [e.target.name]: e.target.value });
-  };
-
-  const handleSaveEdit = async () => {
-    const updatedList = [...recurringItems];
-    updatedList[editingIndex] = editedItem;
-    setRecurringItems(updatedList);
-    setEditingIndex(null);
-    setEditedItem(null);
-
+const handleDelete = async (itemId) => {
     const token = localStorage.getItem("token");
+    setLoading(true);
     try {
-      await axios.put(
-       `${apiUrl}/api/user/limits`,
-        { expectedRecurringList: updatedList },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      toast.success("Recurring item updated");
-      if (onUpdate) onUpdate(updatedList);
+      await axios.delete(`${apiUrl}/api/user/delete/${itemId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      toast.success("Item deleted");
+      fetchRecurringItems();
     } catch (err) {
-      toast.error("Failed to update recurring list");
+      console.error(err);
+      toast.error("Failed to delete item");
+    } finally {
+      setLoading(false);
     }
   };
+
+
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-md w-full">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">📌 Recurring Income & Expenses</h2>
+    <div className="p-4 max-w-4xl mx-auto">
+      <h2 className="text-2xl font-bold mb-4">Add Recurring Item</h2>
+      <RecurringItemForm
+        newItem={newItem}
+        handleInputChange={handleInputChange}
+        handleAddAndSave={handleAddAndSave}
+      />
 
-      {/* 🔔 Upcoming Bills Notification */}
-      {upcomingBills.length > 0 && (
-        <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-4 rounded-md mb-6">
-          <strong>Upcoming Bills (Next 7 Days):</strong>
-          <ul className="list-disc ml-5 mt-2 text-sm">
-            {upcomingBills.map((bill, index) => (
-              <li key={index}>
-                {bill.source} – ₹{bill.amount} due on{" "}
-                {new Date(bill.date).toLocaleDateString("en-IN")}
-              </li>
-            ))}
-          </ul>
+      <h3 className="text-xl font-semibold mt-8 mb-4">Your Recurring Items</h3>
+
+      {loading ? (
+        <div className="flex justify-center items-center py-10">
+          <Loader2 className="animate-spin h-8 w-8 text-blue-500" />
+        </div>
+      ) : recurringItems.length === 0 ? (
+        <p className="text-gray-600">No recurring items found.</p>
+      ) : (
+        <div className="space-y-4">
+          {recurringItems.map((item) => (
+            <div
+              key={item._id}
+              className="border rounded-lg p-4 shadow-sm flex flex-col md:flex-row justify-between md:items-center gap-3"
+            >
+              <div className="space-y-1">
+                <p className="font-semibold text-lg">{item.source}</p>
+                <p>
+                  ₹{item.amount} • {item.type} • {item.frequency}
+                </p>
+                <p className="text-sm text-gray-500">
+                  Start Date:{" "}
+                  <span className="font-medium text-black">
+                    {new Date(item.date).toLocaleDateString()}
+                  </span>
+                </p>
+                {item.nextDueDate && (
+                  <p className="text-sm text-gray-500">
+                    Next Due:{" "}
+                    <span className="font-medium text-black">
+                      {new Date(item.nextDueDate).toLocaleDateString()}
+                    </span>
+                  </p>
+                )}
+                <p className="text-sm text-gray-500">
+                  Status:{" "}
+                  <span
+                    className={`capitalize font-medium ${
+                      item.status === "done"
+                        ? "text-green-600"
+                        : "text-yellow-600"
+                    }`}
+                  >
+                    {item.status || "pending"}
+                  </span>
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-2">
+               {item.status === "done" ? (
+  <button
+    className="mt-4 md:mt-0 px-4 py-2 rounded bg-yellow-500 hover:bg-yellow-600 text-white"
+    onClick={() => handleUndoDone(item._id)}
+  >
+    🔄 Undo
+  </button>
+) : (
+  <button
+    className="mt-4 md:mt-0 px-4 py-2 rounded bg-green-600 hover:bg-green-700 text-white"
+    onClick={() => handleMarkDone(item._id)}
+  >
+    ✅ Mark as Done
+  </button>
+  
+)}
+ <button
+                  onClick={() => handleDelete(item._id)}
+                  className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded"
+                  disabled={loading}
+                >
+                  {loading ? "Deleting..." : "🗑️ Delete"}
+                </button>
+
+              </div>
+            </div>
+          ))}
         </div>
       )}
-
-      {/* 📥 Input Section */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-        <input
-          type="text"
-          placeholder="Source"
-          value={newItem.source}
-          onChange={(e) => setNewItem({ ...newItem, source: e.target.value })}
-          className="border px-4 py-2 rounded-lg w-full"
-        />
-        <input
-          type="number"
-          placeholder="Amount"
-          value={newItem.amount}
-          onChange={(e) => setNewItem({ ...newItem, amount: e.target.value })}
-          className="border px-4 py-2 rounded-lg w-full"
-        />
-        <select
-          value={newItem.type}
-          onChange={(e) => setNewItem({ ...newItem, type: e.target.value })}
-          className="border px-4 py-2 rounded-lg w-full"
-        >
-          <option value="income">Income</option>
-          <option value="expense">Expense</option>
-        </select>
-        <input
-          type="date"
-          value={newItem.date}
-          onChange={(e) => setNewItem({ ...newItem, date: e.target.value })}
-          className="border px-4 py-2 rounded-lg w-full"
-        />
-      </div>
-
-      <button
-        onClick={handleAddAndSave}
-        className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition mb-8"
-      >
-        ➕ Add & Save
-      </button>
-
-      {/* 📋 Recurring Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        {recurringItems.map((item, index) => (
-          <div
-            key={index}
-            className="bg-gray-100 p-4 rounded-lg shadow flex flex-col justify-between"
-          >
-            {editingIndex === index ? (
-              <>
-                <input
-                  name="source"
-                  value={editedItem.source}
-                  onChange={handleEditChange}
-                  className="border p-2 rounded mb-2"
-                />
-                <input
-                  name="amount"
-                  type="number"
-                  value={editedItem.amount}
-                  onChange={handleEditChange}
-                  className="border p-2 rounded mb-2"
-                />
-                <select
-                  name="type"
-                  value={editedItem.type}
-                  onChange={handleEditChange}
-                  className="border p-2 rounded mb-2"
-                >
-                  <option value="income">Income</option>
-                  <option value="expense">Expense</option>
-                </select>
-                <input
-                  name="date"
-                  type="date"
-                  value={editedItem.date?.split("T")[0]}
-                  onChange={handleEditChange}
-                  className="border p-2 rounded mb-4"
-                />
-                <div className="flex justify-end gap-2">
-                  <button
-                    onClick={handleSaveEdit}
-                    className="bg-green-500 text-white px-4 py-1 rounded hover:bg-green-600"
-                  >
-                    Save
-                  </button>
-                  <button
-                    onClick={() => setEditingIndex(null)}
-                    className="bg-gray-400 text-white px-4 py-1 rounded hover:bg-gray-500"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                <div>
-                  <p className="text-lg font-semibold text-gray-800">{item.source}</p>
-                  <p className="text-sm text-gray-600 mt-1">
-                    ₹{item.amount} | <span className="capitalize">{item.type}</span>
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    Due:{" "}
-                    {item.date
-                      ? new Date(item.date).toLocaleDateString("en-IN")
-                      : "N/A"}
-                  </p>
-                </div>
-                <div className="flex justify-end gap-3 mt-4">
-                  <button
-                    onClick={() => handleEdit(index)}
-                    className="text-blue-500 hover:text-blue-700 font-semibold text-sm"
-                  >
-                    ✎ Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(index)}
-                    className="text-red-500 hover:text-red-700 font-semibold text-sm"
-                  >
-                    ✖ Remove
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        ))}
-      </div>
     </div>
   );
 };

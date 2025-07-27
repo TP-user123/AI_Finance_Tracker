@@ -2,7 +2,6 @@ const Transaction = require('../Model/Transaction');
 
 const getAllTransactions = async (req, res) => {
   try {
-    console.log("Fetching transactions for:", req.userId); // ✅ debug log
     const transactions = await Transaction.find({ userId: req.userId }).sort({ date: -1 });
     res.status(200).json(transactions);
   } catch (err) {

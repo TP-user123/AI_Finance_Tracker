@@ -6,6 +6,7 @@ import SmartInsights from "../Components/Insight/SmartInsights";
 import PieChartStats from "../Components/Insight/PieChartStats";
 import BarChartStats from "../Components/Insight/BarChartStats";
 import CategoryInsights from "../Components/Insight/CategoryInsights";
+import { generateAISummary } from "../Components/Insight/AISummary"; // Assuming this is the correct path for the AI summary function  
 const apiUrl = import.meta.env.VITE_API_URL;
 
 const Insights = () => {
@@ -17,8 +18,12 @@ const Insights = () => {
     previousMonth: {},
   });
 
+  const summary = generateAISummary(monthlyStats.currentMonth, monthlyStats.previousMonth);
   const generateStats = (allTxns, selectedMonth, selectedYear) => {
     const stats = { currentMonth: {}, previousMonth: {} };
+
+    
+
 
     allTxns.forEach((txn) => {
       const txnDate = new Date(txn.date);
@@ -140,6 +145,13 @@ useEffect(() => {
           No income recorded this month. Smart insights unavailable.
         </div>
       )}
+
+         <div className="bg-blue-50 text-blue-900 mt-4 p-4 rounded-2xl shadow-sm border border-blue-200">
+      <h2 className="text-lg font-semibold mb-2">🧠 AI Summary</h2>
+      <p className="text-sm leading-relaxed">{summary}</p>
+    </div>
+
+
 
       <div className="mt-10">
         <h2 className="text-xl font-bold text-gray-700 mb-4">Visual Insights</h2>
