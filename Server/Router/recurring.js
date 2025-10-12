@@ -60,7 +60,8 @@ router.post("/markdone", authenticateUser, async (req, res) => {
 
     // Update nextDueDate if recurring
     if (item.frequency && item.frequency !== "none") {
-      const nextDate = new Date(item.date || Date.now());
+      const nextDate = new Date(item.nextDueDate || item.date || Date.now());
+
       switch (item.frequency) {
         case "daily":
           nextDate.setDate(nextDate.getDate() + 1);

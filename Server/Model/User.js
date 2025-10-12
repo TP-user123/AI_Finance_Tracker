@@ -32,6 +32,8 @@ const userSchema = new mongoose.Schema({
     monthly: { type: Number, default: 0 },
     expectedRecurringList: [recurringItemSchema],
   },
+  otp: String,
+  otpExpiry: Date,
 }, { timestamps: true });
 
 

@@ -6,25 +6,22 @@ import SmartInsights from "../Components/Insight/SmartInsights";
 import PieChartStats from "../Components/Insight/PieChartStats";
 import BarChartStats from "../Components/Insight/BarChartStats";
 import CategoryInsights from "../Components/Insight/CategoryInsights";
-import { generateAISummary } from "../Components/Insight/AISummary"; // Assuming this is the correct path for the AI summary function  
+import { generateAISummary } from "../Components/Insight/AISummary";
+
 const apiUrl = import.meta.env.VITE_API_URL;
 
 const Insights = () => {
   const [transactions, setTransactions] = useState([]);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [monthlyStats, setMonthlyStats] = useState({
-    currentMonth: {},
-    previousMonth: {},
-  });
+  const [monthlyStats, setMonthlyStats] = useState({ currentMonth: {}, previousMonth: {} });
+  const [prediction, setPrediction] = useState({ predictedExpense: 0 });
+  const [loadingPrediction, setLoadingPrediction] = useState(true);
 
   const summary = generateAISummary(monthlyStats.currentMonth, monthlyStats.previousMonth);
+
   const generateStats = (allTxns, selectedMonth, selectedYear) => {
     const stats = { currentMonth: {}, previousMonth: {} };
-
-    
-
-
     allTxns.forEach((txn) => {
       const txnDate = new Date(txn.date);
       const txnMonth = txnDate.getMonth() + 1;
@@ -35,56 +32,59 @@ const Insights = () => {
 
       if (txnMonth === selectedMonth && txnYear === selectedYear) {
         if (type === "debit") {
-          stats.currentMonth[safeCategory] =
-            (stats.currentMonth[safeCategory] || 0) + parseFloat(amount);
+          stats.currentMonth[safeCategory] = (stats.currentMonth[safeCategory] || 0) + parseFloat(amount);
         }
-        stats.currentMonth[type] =
-          (stats.currentMonth[type] || 0) + parseFloat(amount);
+        stats.currentMonth[type] = (stats.currentMonth[type] || 0) + parseFloat(amount);
       }
 
       const prev = new Date(selectedYear, selectedMonth - 2);
-      if (
-        txnMonth === prev.getMonth() + 1 &&
-        txnYear === prev.getFullYear()
-      ) {
+      if (txnMonth === prev.getMonth() + 1 && txnYear === prev.getFullYear()) {
         if (type === "debit") {
-          stats.previousMonth[safeCategory] =
-            (stats.previousMonth[safeCategory] || 0) + parseFloat(amount);
+          stats.previousMonth[safeCategory] = (stats.previousMonth[safeCategory] || 0) + parseFloat(amount);
         }
-        stats.previousMonth[type] =
-          (stats.previousMonth[type] || 0) + parseFloat(amount);
+        stats.previousMonth[type] = (stats.previousMonth[type] || 0) + parseFloat(amount);
       }
     });
-
     setMonthlyStats(stats);
   };
 
-  // Fetch transactions and generate stats
-useEffect(() => {
-  const fetchData = async () => {
-    try {
-      const token = localStorage.getItem("token"); // 🔐 Get the JWT token
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await axios.get(`${apiUrl}/api/transactions`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setTransactions(res.data);
+        generateStats(res.data, selectedMonth, selectedYear);
+      } catch (err) {
+        console.error("Failed to fetch transactions:", err);
+      }
+    };
+    fetchData();
+  }, [selectedMonth, selectedYear]);
 
-      const res = await axios.get(`${apiUrl}/api/transactions`, {
-        headers: {
-          Authorization: `Bearer ${token}`, // ✅ Attach token here
-        },
-      });
-
-      setTransactions(res.data);
-      generateStats(res.data, selectedMonth, selectedYear); // 📊 Generate stats using filtered data
-    } catch (err) {
-      console.error("Failed to fetch transactions:", err);
-    }
-  };
-
-  fetchData();
-}, [selectedMonth, selectedYear]);
-
+  useEffect(() => {
+    const fetchPrediction = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await axios.get(`${apiUrl}/api/insights/predict`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        console.log("Prediction response:", res.data);
+        setPrediction({ predictedExpense: res.data.predictedExpense });
+      } catch (err) {
+        console.error("Prediction fetch error:", err);
+      } finally {
+        setLoadingPrediction(false);
+      }
+    };
+    fetchPrediction();
+  }, []);
 
   return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">Insights</h1>
+    <div className="p-4 md:p-6 max-w-7xl mx-auto">
+      <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-6">Insights</h1>
 
       <div className="flex flex-wrap gap-4 items-center mb-6">
         <select
@@ -116,42 +116,35 @@ useEffect(() => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <InsightCard
-          title="Total Income (This Month)"
-          amount={monthlyStats.currentMonth.credit || 0}
-          type="credit"
-        />
-        <InsightCard
-          title="Total Expense (This Month)"
-          amount={monthlyStats.currentMonth.debit || 0}
-          type="debit"
-        />
+        <InsightCard title="Total Income (This Month)" amount={monthlyStats.currentMonth.credit ?? 0} type="credit" />
+        <InsightCard title="Total Expense (This Month)" amount={monthlyStats.currentMonth.debit ?? 0} type="debit" />
         <InsightCard
           title="Net Savings"
-          amount={
-            (monthlyStats.currentMonth.credit || 0) -
-            (monthlyStats.currentMonth.debit || 0)
-          }
+          amount={(monthlyStats.currentMonth.credit ?? 0) - (monthlyStats.currentMonth.debit ?? 0)}
           type="neutral"
         />
       </div>
+
+      {loadingPrediction ? (
+        <div className="text-gray-500 italic mt-6">Loading predictions...</div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-6">
+          <InsightCard title="Predicted Expense (Next Month)" amount={prediction.predictedExpense ?? 0} type="debit" />
+        </div>
+      )}
 
       <MonthComparison monthlyStats={monthlyStats} />
 
       {(monthlyStats.currentMonth.credit > 0 || monthlyStats.currentMonth.debit > 0) ? (
         <SmartInsights monthlyStats={monthlyStats} />
       ) : (
-        <div className="mt-10 text-gray-500 italic">
-          No income recorded this month. Smart insights unavailable.
-        </div>
+        <div className="mt-10 text-gray-500 italic">No income recorded this month. Smart insights unavailable.</div>
       )}
 
-         <div className="bg-blue-50 text-blue-900 mt-4 p-4 rounded-2xl shadow-sm border border-blue-200">
-      <h2 className="text-lg font-semibold mb-2">🧠 AI Summary</h2>
-      <p className="text-sm leading-relaxed">{summary}</p>
-    </div>
-
-
+      <div className="bg-blue-50 text-blue-900 mt-8 p-4 rounded-2xl shadow-sm border border-blue-200">
+        <h2 className="text-lg font-semibold mb-2">🧠 AI Summary</h2>
+        <p className="text-sm leading-relaxed">{summary}</p>
+      </div>
 
       <div className="mt-10">
         <h2 className="text-xl font-bold text-gray-700 mb-4">Visual Insights</h2>

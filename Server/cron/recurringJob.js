@@ -1,22 +1,24 @@
 const cron = require("node-cron");
 const User = require("../Model/User");
-const Transaction = require("../Model/Transaction"); // Your existing transaction model
-const dayjs = require("dayjs"); // or use native Date if preferred
+const Transaction = require("../Model/Transaction");
+const dayjs = require("dayjs");
 
-// Schedule to run every day at 00:10 AM
+// Run once daily at 12:10 AM
 cron.schedule("10 0 * * *", async () => {
-  console.log("🕒 Running recurring transactions cron job");
+  console.log("🔁 Running auto recurring transaction job...");
 
   try {
     const users = await User.find({ "spendingLimit.expectedRecurringList": { $exists: true, $ne: [] } });
 
     for (const user of users) {
-      for (const item of user.spendingLimit.expectedRecurringList) {
-        const { source, amount, type, date, frequency, autoAdd } = item;
+      let hasChanges = false;
+
+      for (let item of user.spendingLimit.expectedRecurringList) {
+        const { source, amount, type, frequency, autoAdd } = item;
 
         if (!autoAdd || frequency === "none") continue;
 
-        const lastDate = dayjs(date);
+        const lastDate = dayjs(item.date || new Date());
         const today = dayjs();
 
         let shouldAdd = false;
@@ -36,7 +38,7 @@ cron.schedule("10 0 * * *", async () => {
         }
 
         if (shouldAdd) {
-          // Add transaction
+          // ✅ Create transaction
           await Transaction.create({
             userId: user._id,
             source,
@@ -44,24 +46,31 @@ cron.schedule("10 0 * * *", async () => {
             type,
             category: source,
             description: `Auto recurring: ${source}`,
-            date: new Date(), // use today's date
+            date: new Date(),
           });
 
-          // Update item's last processed date
-          item.date = new Date(); // Reset recurrence start
+          // ✅ Update recurring item
+          item.date = new Date(); // Set new base date
+          item.status = "pending";
+          item.completedOn = null;
+          item.nextDueDate = calculateNextDueDate(new Date(), frequency);
+          hasChanges = true;
         }
       }
 
-      await user.save(); // Save updated recurring item dates
+      if (hasChanges) {
+        user.markModified("spendingLimit.expectedRecurringList");
+        await user.save();
+      }
     }
 
-    console.log("✅ Recurring transactions processed");
+    console.log("✅ Auto recurring task done.");
   } catch (err) {
-    console.error("❌ Error in recurring cron job:", err);
+    console.error("❌ Cron error:", err);
   }
 });
 
-const updateNextDueDate = (currentDate, frequency) => {
+function calculateNextDueDate(currentDate, frequency) {
   const date = new Date(currentDate);
   switch (frequency) {
     case "daily":
@@ -76,42 +85,6 @@ const updateNextDueDate = (currentDate, frequency) => {
     case "yearly":
       date.setFullYear(date.getFullYear() + 1);
       break;
-    default:
-      break;
   }
-  return date.toISOString().split("T")[0];
-};
-
-cron.schedule("0 0 * * *", async () => {
-  console.log("Running recurring job...");
-
-  const users = await User.find();
-
-  for (const user of users) {
-    const list = user.spendingLimit.expectedRecurringList;
-    for (let item of list) {
-      const today = new Date().toISOString().split("T")[0];
-      if (item.date === today) {
-        // Create a real transaction
-        await Transaction.create({
-          user: user._id,
-          source: item.source,
-          amount: item.amount,
-          type: item.type,
-          date: new Date(),
-          category: "Recurring",
-        });
-
-        // Update next due date
-        item.date = updateNextDueDate(item.date, item.frequency);
-
-        // Reset status
-        item.status = "pending";
-        item.completedOn = null;
-      }
-    }
-    await user.save();
-  }
-
-  console.log("Recurring job completed.");
-});
+  return date;
+}

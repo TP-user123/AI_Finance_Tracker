@@ -16,6 +16,7 @@ import Login from "./Pages/Login";
 import Navbar from "./Components/Navbar";
 import PrivateRoute from "./Components/PrivateRoute";
 import Settings from "./Pages/Settings";
+import Goals from "./Pages/Goals";
 
 function AppLayout() {
   const location = useLocation();
@@ -59,6 +60,17 @@ function AppLayout() {
               }
             />
 
+
+             <Route
+              path="/goals"
+              element={
+                <PrivateRoute>
+                  <Goals/>
+                </PrivateRoute>
+              }
+            />
+
+
             
 
            
@@ -72,6 +84,7 @@ function AppLayout() {
             />
             {/* Public Route */}
             <Route path="/login" element={<Login />} />
+            {/* Not Found Route */}
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </main>

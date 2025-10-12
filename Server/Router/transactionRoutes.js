@@ -47,7 +47,7 @@ router.get('/monthly-total', async (req, res) => {
 
     res.json({ debit });
   } catch (err) {
-    console.error('Error fetching monthly total:', err);
+    
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 });

@@ -227,7 +227,7 @@ useEffect(() => {
         </div>
       </div>
       {/* Cards */}
-      "<div className="grid gap-5 grid-cols-[repeat(auto-fit,minmax(280px,1fr))]">
+      <div className="grid gap-5 grid-cols-[repeat(auto-fit,minmax(280px,1fr))]">
 
         {filtered.map((t) => (
           <div
