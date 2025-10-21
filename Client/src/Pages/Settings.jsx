@@ -74,23 +74,29 @@ const Settings = () => {
       <h1 className="text-4xl font-bold text-gray-800 mb-8">⚙️ Settings</h1>
 
       {/* Profile */}
-      <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 bg-white p-6 rounded-xl shadow mb-8">
-        {user.picture ? (
-          <img
-            src={user.picture}
-            alt="Profile"
-            className="w-24 h-24 rounded-full object-cover border-4 border-blue-100 shadow"
-          />
-        ) : (
-          <div className="w-24 h-24 rounded-full bg-blue-600 text-white flex items-center justify-center text-3xl font-semibold border-4 border-blue-100 shadow">
-            {user.name?.charAt(0).toUpperCase()}
-          </div>
-        )}
-        <div className="text-center sm:text-left">
-          <h2 className="text-2xl font-semibold text-gray-800">{user.name}</h2>
-          <p className="text-gray-500">{user.email}</p>
-        </div>
-      </div>
+     <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 bg-white p-6 rounded-xl shadow mb-8">
+  {user.picture ? (
+    <img
+      src={user.picture}
+      alt="Profile"
+      className="w-24 h-24 rounded-full object-cover border-4 border-blue-100 shadow"
+    />
+  ) : (
+    <div className="w-24 h-24 rounded-full bg-blue-600 text-white flex items-center justify-center text-3xl font-semibold border-4 border-blue-100 shadow">
+      {user.name?.charAt(0).toUpperCase()}
+    </div>
+  )}
+
+  <div className="flex flex-col text-center sm:text-left w-full min-w-0">
+    <h2 className="text-2xl font-semibold text-gray-800 truncate sm:whitespace-normal break-words">
+      {user.name}
+    </h2>
+    <p className="text-gray-500 break-words max-w-full overflow-hidden">
+      {user.email}
+    </p>
+  </div>
+</div>
+
 
       {/* Monthly Limit */}
       <div className="bg-white p-6 rounded-xl shadow mb-8">

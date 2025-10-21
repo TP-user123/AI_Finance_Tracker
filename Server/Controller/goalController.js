@@ -80,20 +80,33 @@ export const deleteGoal = async (req, res) => {
 export const markGoalComplete = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status } = req.body; // "completed" or "failed"
+    const { status } = req.body; // expected values: "completed" or "failed"
 
+    // Validate status
     if (!["completed", "failed"].includes(status)) {
-      return res.status(400).json({ success: false, message: "Invalid status" });
+      return res.status(400).json({ success: false, message: "Invalid status value" });
     }
 
-    const goal = await Goal.findOne({ _id: id, userId: req.user._id });
-    if (!goal) return res.status(404).json({ success: false, message: "Goal not found" });
+    // Make sure req.user.id exists (depends on your auth middleware)
+    const userId = req.user?.id || req.userId;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: "Unauthorized user" });
+    }
 
+    // Find the goal by id and user ownership
+    const goal = await Goal.findOne({ _id: id, userId });
+    if (!goal) {
+      return res.status(404).json({ success: false, message: "Goal not found" });
+    }
+
+    // Update goal status
     goal.status = status;
     await goal.save();
 
-    res.json({ success: true, data: goal });
+    return res.status(200).json({ success: true, data: goal });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error("Error updating goal status:", err);
+    return res.status(500).json({ success: false, message: "Server error" });
   }
 };
+

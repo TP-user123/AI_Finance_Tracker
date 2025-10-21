@@ -41,8 +41,8 @@ export const deleteGoal = async (id) => {
 export const markGoalComplete = async (id) => {
   const res = await axios.patch(
     `${apiUrl}/api/goals/${id}/complete`,
-    { status: "completed" },
-    authHeaders()
+    { status: "completed" }, // optional if backend already sets it
+    authHeaders() // ensure this returns { headers: { Authorization: ... } }
   );
   return res.data.data;
 };

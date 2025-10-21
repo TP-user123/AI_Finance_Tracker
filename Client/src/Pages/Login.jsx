@@ -246,31 +246,35 @@ const Login = () => {
     }
   };
 
-  const handleGoogleLogin = async (cred) => {
-    setLoading(true);
-    try {
-      const decoded = jwtDecode(cred.credential);
-      const res = await fetch(`${apiUrl}/api/auth/google`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: cred.credential }),
-      });
+ const handleGoogleLogin = async (cred) => {
+  setLoading(true);
+  try {
+    const decoded = jwtDecode(cred.credential);
+    
+    const res = await fetch(`${apiUrl}/api/auth/google`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: cred.credential }),
+    });
 
-      const data = await res.json();
-      if (res.ok) {
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("user", JSON.stringify(data.user));
-        toast.success("Logged in with Google!");
-        navigate("/");
-      } else {
-        toast.error("Google login failed.");
-      }
-    } catch (err) {
-      toast.error("Google Sign-in Failed");
-    } finally {
-      setLoading(false);
+    const data = await res.json();
+
+    if (res.ok && data.token && data.user) {
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+      toast.success("Logged in with Google!");
+      navigate("/", { replace: true }); // ✅ use replace to avoid stuck navigation
+    } else {
+      toast.error(data.message || "Google login failed.");
     }
-  };
+  } catch (err) {
+    console.error("Google login error:", err);
+    toast.error("Google Sign-in Failed");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-tr from-blue-200 via-white to-pink-200 px-4">
